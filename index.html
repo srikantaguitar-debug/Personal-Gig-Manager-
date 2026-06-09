@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="pageTitle">Gig Manager Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8b5cf6">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { 
+            --bg: #f3f4f6; --card: rgba(255, 255, 255, 0.95); --accent: #8b5cf6; 
+            --grad: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            --grad-2: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+            --grad-3: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            --grad-4: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --text: #111827; --dim: #6b7280; --border: #e5e7eb; 
+            --success: #10b981; --info: #3b82f6; --danger: #ef4444; --warning: #f59e0b;
+            --shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+            --glass: blur(12px) saturate(180%);
+        }
+        [data-theme="dark"] { 
+            --bg: #0f172a; --card: rgba(30, 41, 59, 0.90); --text: #f3f4f6; 
+            --dim: #94a3b8; --border: #334155; 
+            --shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 85px; transition: background 0.3s; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        .container { padding: 15px; max-width: 100%; margin: auto; box-sizing: border-box; }
+        
+        header { background: var(--grad); padding: 15px 0 20px; text-align: center; border-radius: 0 0 30px 30px; box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4); position: relative; z-index: 10; color: white;}
+        
+        .nav { 
+            display: flex; 
+            background: var(--card); 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            z-index: 1000; 
+            border-top: 1px solid var(--border); 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); 
+            backdrop-filter: var(--glass); 
+            padding: 8px 5px; 
+            justify-content: flex-start; 
+            overflow-x: auto; 
+            scroll-behavior: smooth; 
+            -webkit-overflow-scrolling: touch; 
+            gap: 8px; 
+        }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav-btn { 
+            flex: 0 0 auto; 
+            min-width: 75px; 
+            padding: 6px 0; 
+            border: none; 
+            background: none; 
+            color: var(--dim); 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 3px; 
+            border-radius: 12px; 
+            transition: transform 0.2s; 
+        }
+        .nav-btn.active { color: var(--accent); transform: scale(1.05); }
+        .nav-btn span { font-size: 20px; display: block; transition: 0.2s; }
+        .nav-btn.active span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 22px; }
+        
+        .page { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
+        .page.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        .glass-card { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: var(--shadow); backdrop-filter: var(--glass); position: relative; overflow: hidden; }
+        .glass-card::after { content: ''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--grad); opacity: 0.8; }
+
+        input, select, textarea { width: 100%; padding: 14px; margin: 8px 0; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 14px; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s; font-family: inherit; font-weight: 500; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
+        textarea { resize: vertical; height: 90px; }
+        
+        .btn-main { background: var(--grad); color: white; border: none; padding: 15px; border-radius: 14px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 14px; box-shadow: 0 6px 15px rgba(139, 92, 246, 0.3); transition: 0.2s; letter-spacing: 0.5px; text-transform: uppercase; }
+        .btn-main:active { transform: scale(0.97); }
+        
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; }
+        .toast { padding: 14px 20px; border-radius: 14px; color: white; font-weight: 600; margin-bottom: 10px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideDown 0.3s ease; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+        
+        #lockScreen { position: fixed; inset: 0; background: var(--bg); z-index: 8000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal-content { background: var(--card); border-radius: 28px; padding: 25px; border: 1px solid var(--border); width: 88%; max-width: 400px; position: relative; text-align: center; overflow-y: auto; max-height: 85vh; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .close-x { position: absolute; right: 20px; top: 20px; font-size: 24px; color: var(--dim); cursor: pointer; line-height: 1; background: var(--bg); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .pin-dots { display: flex; gap: 18px; margin: 30px auto; justify-content: center; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--accent); transition: 0.2s; }
+        .dot.active { background: var(--accent); transform: scale(1.3); box-shadow: 0 0 15px var(--accent); }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 320px; margin: 0 auto; }
+        .num-btn { width: 72px; height: 72px; border-radius: 26px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s ease; user-select: none; margin: auto; box-shadow: var(--shadow); }
+        .num-btn:active { background: var(--accent); color: white; transform: scale(0.92); border-color: transparent; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .stat-box { padding: 20px 15px; border-radius: 22px; text-align: center; border: 1px solid var(--border); background: var(--card); cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+        .stat-box:active { transform: scale(0.98); }
+        .stat-box h2 { margin: 6px 0; font-size: 24px; font-weight: 800; }
+        .stat-box small { font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.9; letter-spacing: 0.5px; }
+        
+        .stat-full { grid-column: span 2; border: none; color: white; }
+        .stat-purple { background: var(--grad); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.35); }
+        .stat-blue { background: var(--grad-2); color: white; border: none; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35); }
+        .stat-orange { background: var(--grad-3); color: white; border: none; box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35); }
+        .stat-green { background: var(--grad-4); color: white; border: none; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); }
+        
+        .stat-box h2 { color: inherit; }
+        .stat-box small { color: inherit; }
+
+        #logoPreview { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); margin: 0 auto 15px; display: none; box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+        .bk-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; align-items: center; }
+
+        .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .comp-card { background: var(--grad); color: white; padding: 18px; border-radius: 22px; text-align: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.35); }
+        .comp-card:active { transform: scale(0.98); opacity: 0.9; }
+        .comp-card h3 { margin: 6px 0; font-size: 22px; color: white; font-weight: 800; }
+        .comp-card p { margin: 0; font-size: 12px; opacity: 0.95; font-weight: 600; }
+        .clickable-cell { cursor: pointer; color: var(--info); font-weight: 700; text-decoration: none; }
+        
+        .scroll-list { max-height: 280px; overflow-y: auto; padding-right: 5px; border-top: 1px solid var(--border); margin-top: 15px; }
+        .scroll-list::-webkit-scrollbar { width: 3px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
+
+        .reminder-box { background: var(--grad-3); color: #fff; padding: 15px; border-radius: 18px; margin-bottom: 15px; display: block; animation: pulse 2s infinite; text-align: center; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); font-weight: 700; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        .chip-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .chip { background: var(--bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        .chip span { color: var(--danger); cursor: pointer; font-weight: bold; font-size: 15px; }
+
+    </style>
+</head>
+<body onload="initApp()">
+
+    <div id="toast-container"></div>
+
+<div id="authScreen" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; display:none;">
+    <div class="glass-card" style="width:85%; max-width:350px; text-align:center; padding:30px;">
+        <h2 style="color:var(--accent); font-size:28px; font-weight:800; margin-bottom:5px;">Cloud Sync</h2>
+        <p style="color:var(--dim); font-size:12px; margin-bottom:20px;">Secure Manager Sync</p>
+        
+        <input type="email" id="fEmail" placeholder="Email Address">
+        <input type="password" id="fPass" placeholder="Password">
+        
+        <button class="btn-main" onclick="handleLogin()" id="btnLoginBtn">LOGIN / SYNC</button>
+        <button class="btn-main" onclick="handleSignup()" style="background:var(--bg); color:var(--text); border:1px solid var(--border); margin-top:10px;">CREATE NEW ACCOUNT</button>
+        
+        <p id="authMsg" style="color:var(--danger); font-size:12px; margin-top:10px;"></p>
+        <div id="authLoader" style="display:none; color:var(--accent); font-size:12px; margin-top:10px;">Connecting to server...</div>
+    </div>
+</div>
+    <div id="lockScreen">
+        <h2 id="lockScreenTitle" style="margin:0 0 10px 0; color:var(--danger); font-size: 42px; font-weight: 800; letter-spacing: -1px; text-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);">MANAGER</h2>
+        <p style="color:var(--dim); margin:0 0 30px 0;">Enter security PIN</p>
+        <div class="pin-dots" id="loginDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="numpad">
+            <div class="num-btn" onclick="pressNum('1')">1</div><div class="num-btn" onclick="pressNum('2')">2</div><div class="num-btn" onclick="pressNum('3')">3</div>
+            <div class="num-btn" onclick="pressNum('4')">4</div><div class="num-btn" onclick="pressNum('5')">5</div><div class="num-btn" onclick="pressNum('6')">6</div>
+            <div class="num-btn" onclick="pressNum('7')">7</div><div class="num-btn" onclick="pressNum('8')">8</div><div class="num-btn" onclick="pressNum('9')">9</div>
+            <div class="num-btn" style="border:none; color:var(--danger); font-size:16px; box-shadow:none; background:transparent;" onclick="pressNum('C')">CLR</div><div class="num-btn" onclick="pressNum('0')">0</div><div class="num-btn" style="border:none; color:var(--dim); font-size:20px; box-shadow:none; background:transparent;" onclick="pressNum('B')">⌫</div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal" style="z-index:99999;">
+        <div class="modal-content" style="max-width:320px;">
+            <div style="font-size:40px; margin-bottom:10px;">🤔</div>
+            <h3 id="confTitle" style="margin:0 0 10px 0; color:var(--text);">Are you sure?</h3>
+            <p id="confMsg" style="color:var(--dim); font-size:14px; margin-bottom:25px;">Do you really want to proceed?</p>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" onclick="closeConfirmModal()" style="background:var(--bg); color:var(--text); border:1px solid var(--border); margin-top:0;">CANCEL</button>
+                <button id="btnConfYes" class="btn-main" style="background:var(--grad-3); margin-top:0; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);">YES, DO IT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pinModal" class="modal">
+        <div class="modal-content">
+            <span class="close-x" onclick="closePinModal()">×</span>
+            <h3>Confirm PIN</h3>
+            <div class="pin-dots" id="actionDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="numpad" style="gap:15px">
+                <div class="num-btn" onclick="pressActionNum('1')">1</div><div class="num-btn" onclick="pressActionNum('2')">2</div><div class="num-btn" onclick="pressActionNum('3')">3</div>
+                <div class="num-btn" onclick="pressActionNum('4')">4</div><div class="num-btn" onclick="pressActionNum('5')">5</div><div class="num-btn" onclick="pressActionNum('6')">6</div>
+                <div class="num-btn" onclick="pressActionNum('7')">7</div><div class="num-btn" onclick="pressActionNum('8')">8</div><div class="num-btn" onclick="pressActionNum('9')">9</div>
+                <div class="num-btn" style="visibility:hidden"></div><div class="num-btn" onclick="pressActionNum('0')">0</div><div class="num-btn" onclick="pressActionNum('B')">⌫</div>
+            </div>
+        </div>
+    </div>
+    
+    <header>
+        <h2 id="mainAppTitle" style="margin:0; font-size:24px; font-weight:800;">Gig Manager Pro</h2>
+    </header>
+
+    <div class="nav">
+        <button class="nav-btn active" id="btn-dash" onclick="showPage('dash')"><span>📊</span>Dash</button>
+        <button class="nav-btn" id="btn-add" onclick="showPage('add')"><span>➕</span>Entry</button>
+        <button class="nav-btn" id="btn-calendar" onclick="showPage('calendar')"><span>📆</span>Schedule</button>
+        <button class="nav-btn" id="btn-history" onclick="showPage('history')"><span>🕰️</span>History</button>
+        <button class="nav-btn" id="btn-analysis" onclick="showPage('analysis')"><span>📈</span>Analysis</button>
+        <button class="nav-btn" id="btn-compare" onclick="showPage('compare')"><span>⚖️</span>Compare</button>
+        <button class="nav-btn" id="btn-tools" onclick="showPage('tools')"><span>⚙️</span>Tools</button>
+    </div>
+
+    <div class="container">
+        <div id="dash" class="page active">
+            <div id="reminderArea"></div>
+
+            <div class="glass-card" style="padding: 15px; display:flex; gap:12px; align-items:center;">
+                 <select id="dashMemSelect" onchange="updateDash()" style="flex:2; margin:0; border:2px solid var(--accent); color:var(--accent); font-weight:700; background:var(--bg);"></select>
+                 <select id="dashAvgMode" onchange="updateDash()" style="flex:1.5; margin:0; font-size:12px; font-weight:700; background:var(--bg);">
+                    <option value="show">Avg/Show</option>
+                    <option value="month">Avg/Month</option>
+                </select>
+            </div>
+            
+            <div class="glass-card">
+                <div class="stat-box stat-full stat-green" style="margin-bottom:15px;" onclick="viewBreakdown('custom')">
+                    <small style="opacity:0.9">Selected Period Income</small>
+                    <h2 id="dashCustomAmt" style="font-size:32px; margin: 8px 0;">₹0</h2>
+                    <span id="dashCustomGigs" style="background:rgba(255,255,255,0.25); padding:5px 14px; border-radius:12px; font-size:13px; font-weight:700;">0 Shows</span>
+                </div>
+
+                <h4 style="margin:0 0 10px 0; color:var(--text); font-weight:700; font-size:14px; border-bottom:1px solid var(--border); padding-bottom:8px;">Selected Period Overview</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <select id="dashStartMonth" onchange="updateDash()" style="font-size:12px; padding:10px;"></select><select id="dashStartYear" onchange="updateDash()" style="font-size:12px; padding:10px;"></select>
+                    <select id="dashEndMonth" onchange="updateDash()" style="font-size:12px; padding:10px;"></select><select id="dashEndYear" onchange="updateDash()" style="font-size:12px; padding:10px;"></select>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-box stat-blue" onclick="viewBreakdown('month')">
+                        <small>This Month</small><h2 id="dashMonthAmt">₹0</h2><span id="dashMonthGigs" style="font-size:11px; opacity:0.9">0 Gigs</span>
+                    </div>
+                    <div class="stat-box stat-orange" onclick="viewBreakdown('year')">
+                        <small>This Year</small><h2 id="dashYearAmt">₹0</h2><span id="dashYearGigs" style="font-size:11px; opacity:0.9">0 Gigs</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h4 style="margin:0; color:var(--accent); font-weight:800;">Growth Chart</h4>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:15px;">
+                    <select id="growthY1" style="font-size:11px; padding:10px" onchange="updateDash()"></select>
+                    <select id="growthY2" style="font-size:11px; padding:10px" onchange="updateDash()"></select>
+                    <select id="growthY3" style="font-size:11px; padding:10px" onchange="updateDash()"></select>
+                </div>
+                <div style="height:220px;"><canvas id="dashGrowthChart"></canvas></div>
+            </div>
+
+            <div class="glass-card">
+                <div class="stat-box stat-full stat-purple" style="border:none;" onclick="viewBreakdown('lifetime')">
+                    <small>Lifetime Earnings</small><h2 id="dashLifetimeAmt">₹0</h2><span id="dashLifetimeGigs" style="font-size:13px; opacity:0.85; font-weight:600;">0 Shows</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="add" class="page">
+            <div class="glass-card">
+                <h4 id="formTitle" style="color:var(--accent); margin-top:0; font-size:18px;">Gig Entry</h4>
+                <input type="hidden" id="editId">
+                <input type="text" id="vName" placeholder="Venue Name" style="font-weight:700;">
+                <input list="orgDList" id="orgName" placeholder="Organizer Name">
+                
+                <div style="display:flex; gap:10px; margin: 8px 0;">
+                    <input type="date" id="gDate" style="flex:1; margin:0;">
+                    <select id="gStatus" style="flex:1; margin:0; font-weight:700;">
+                        <option value="Knock">🟡 Knock</option>
+                        <option value="Final">🔴 Final</option>
+                        <option value="Complete">🟢 Complete</option>
+                    </select>
+                </div>
+                
+                <input list="typeDList" type="text" id="gType" placeholder="Gig Type / Instrument (e.g. Band, Acoustic)" style="margin-top:8px;">
+                <datalist id="typeDList">
+                    <option value="Full Band">
+                    <option value="Acoustic">
+                    <option value="Solo">
+                    <option value="Guitar">
+                    <option value="Keyboard">
+                    <option value="Vocals">
+                </datalist>
+
+                <input type="number" id="gDeal" placeholder="Total Deal ₹" oninput="calcDue()" style="color:var(--success); font-weight:800; font-size:16px;">
+                
+                <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px;">
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label style="font-size:11px; font-weight:700; color:var(--dim);">Advance (অ্যাডভান্স)</label>
+                            <input type="number" id="gAdvance" placeholder="Advance ₹" oninput="calcDue()" style="margin:4px 0 0 0;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:11px; font-weight:700; color:var(--danger);">Due (বকেয়া)</label>
+                            <input type="number" id="gDue" placeholder="Due ₹" oninput="calcAdv()" style="margin:4px 0 0 0; color:var(--danger); font-weight:bold;">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:5px; margin-top:8px;">
+                        <select id="gAdvMode" style="margin:0; flex:1; font-weight:bold; font-size:12px;">
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                        </select>
+                        <input type="text" id="gAdvNote" placeholder="Transaction ID / Note" style="margin:0; flex:2;">
+                    </div>
+                </div>
+
+                <textarea id="gNote" placeholder="General Gig Note (e.g. Sound check time, Advance info...)"></textarea>
+                <div id="payoutArea" style="margin-top:15px;"></div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button type="button" onclick="addRow()" class="btn-main" style="background:var(--info); font-size:12px; margin-top:0;">+ Member</button>
+                </div>
+                <button class="btn-main" onclick="saveShow()" style="background:var(--success); margin-top:20px;">SAVE DATA</button>
+                <button class="btn-main" id="cancelBtn" style="display:none; background:var(--dim); margin-top:10px;" onclick="resetForm()">CANCEL</button>
+            </div>
+        </div>
+
+        <div id="calendar" class="page">
+            <div class="glass-card" style="padding: 15px; display:flex; gap:12px; align-items:center;">
+                 <select id="calMonth" onchange="renderCalendar()" style="flex:1; margin:0;"></select>
+                 <select id="calYear" onchange="renderCalendar()" style="flex:1; margin:0;"></select>
+            </div>
+            
+            <div style="display:flex; justify-content:center; gap:15px; font-size:11px; font-weight:bold; margin-bottom:10px; color:var(--dim);">
+                <span>🔴 Final</span><span>🟡 Knock</span><span>🟢 Complete</span>
+            </div>
+
+            <div class="glass-card">
+                <div style="display:grid; grid-template-columns: repeat(7, 1fr); text-align:center; font-weight:bold; margin-bottom:10px; font-size:12px; color:var(--dim);">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calGrid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:6px;"></div>
+            </div>
+        </div>
+
+        <div id="history" class="page">
+            <div class="glass-card" style="padding: 18px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; gap: 10px;">
+                    <select id="histMonth" onchange="renderHistory()" style="margin:0; flex:1"></select>
+                    <select id="histYear" onchange="renderHistory()" style="margin:0; flex:1"></select>
+                </div>
+                <input type="text" id="histSearch" placeholder="🔍 Search Venue, Date, Type or type 'due'..." onkeyup="renderHistory()" style="margin:0; padding: 16px; font-size:15px;">
+                
+                <div id="histSummary" style="display:flex; justify-content:space-between; background:var(--bg); padding:12px; border-radius:12px; border:1px solid var(--border); font-size:11px; font-weight:bold; text-align:center;">
+                    <div style="color:var(--text)">Total Deal<br><span id="histTotDeal" style="font-size:16px;">₹0</span></div>
+                    <div style="color:var(--success)">Total Paid<br><span id="histTotPaid" style="font-size:16px;">₹0</span></div>
+                    <div style="color:var(--danger)">Total Due<br><span id="histTotDue" style="font-size:16px;">₹0</span></div>
+                </div>
+            </div>
+            <div id="hList" style="padding-bottom:20px;"></div>
+        </div>
+
+        <div id="analysis" class="page">
+            <div class="glass-card">
+                <div style="display:flex; gap:5px; margin-bottom:15px;">
+                    <select id="analysisType" onchange="toggleAnalysisMode()" style="flex:2; font-weight:700; color:var(--accent);">
+                        <option value="member">Member Performance</option>
+                        <option value="organizer">Organizer Business</option>
+                        <option value="type">Instrument / Gig Type</option>
+                    </select>
+                    <select id="anaAvgMode" onchange="triggerAnalysis()" style="flex:1.5; font-size:11px; font-weight:600;"><option value="show">Avg/Show</option><option value="month">Avg/Month</option></select>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <select id="anaStartMonth" onchange="triggerAnalysis()" style="font-size:12px;"></select><select id="anaStartYear" onchange="triggerAnalysis()" style="font-size:12px;"></select>
+                    <select id="anaEndMonth" onchange="triggerAnalysis()" style="font-size:12px;"></select><select id="anaEndYear" onchange="triggerAnalysis()" style="font-size:12px;"></select>
+                </div>
+                <div id="memberSection" style="margin-top:20px;">
+                    <select id="memSelect" onchange="runMemberAnalysis()"></select>
+                    <div id="memStats" style="display:none; margin-top:20px;">
+                        <div style="background:var(--grad); padding:25px; border-radius:24px; color:white; text-align:center; box-shadow: 0 15px 30px rgba(139, 92, 246, 0.4);">
+                            <h2 id="totalSelectedVal" style="font-size:40px; margin:0;">₹0</h2>
+                            <span id="totalSelectedShow" style="font-size:15px; opacity:0.9; font-weight:600;">0 Shows</span>
+                            <div id="memAvgStats" style="font-size:13px; margin-top:10px; opacity:0.9; border-top:1px solid rgba(255,255,255,0.2); padding-top:10px;">Avg: ₹0 / Show</div>
+                        </div>
+                        <button class="btn-main" onclick="exportMemberPDF()" style="background:var(--bg); color:var(--text); border:1px solid var(--border);">DOWNLOAD PDF REPORT</button>
+                        <div style="height:250px; margin-top:25px;"><canvas id="memChart"></canvas></div>
+                    </div>
+                </div>
+                <div id="orgSection" style="display:none; margin-top:20px;">
+                    <div style="background:var(--bg); border:1px solid var(--border); padding:25px; border-radius:24px; text-align:center;">
+                        <h2 id="orgPeriodTotal" style="color:var(--text); margin:0; font-size:36px;">₹0</h2>
+                        <span id="orgPeriodGigs" style="color:var(--dim); font-weight:600;">0 Shows</span>
+                        <div id="orgAvgStats" style="font-size:13px; margin-top:8px; color:var(--dim)">Avg: ₹0 / Show</div>
+                    </div>
+                    <button class="btn-main" style="background:var(--success); margin-top:15px;" onclick="exportOrgFullPDF()">DOWNLOAD ORG SUMMARY</button>
+                    <div style="max-width:280px; margin:auto; margin-top:25px;"><canvas id="orgChart"></canvas></div>
+                    <div id="orgDetailsList" class="scroll-list"></div>
+                </div>
+                <div id="typeSection" style="display:none; margin-top:20px;">
+                    <div style="background:var(--bg); border:1px solid var(--border); padding:25px; border-radius:24px; text-align:center;">
+                        <h2 id="typePeriodTotal" style="color:var(--text); margin:0; font-size:36px;">₹0</h2>
+                        <span id="typePeriodGigs" style="color:var(--dim); font-weight:600;">0 Shows</span>
+                    </div>
+                    <div style="max-width:280px; margin:auto; margin-top:25px;"><canvas id="typeChart"></canvas></div>
+                    <div id="typeDetailsList" class="scroll-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="compare" class="page">
+            <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h4 style="margin:0; color:var(--accent); font-weight:800;">Period Comparison</h4>
+                    <select id="compAvgMode" onchange="runComparison()" style="width:100px; font-size:11px; margin:0; font-weight:600;"><option value="show">Avg/Show</option><option value="month">Avg/Month</option></select>
+                </div>
+                <select id="compMemSelect" onchange="runComparison()" style="margin-top:10px;"></select>
+                <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div style="background:var(--bg); padding:12px; border-radius:18px; border:1px solid var(--border);">
+                        <small style="color:var(--accent); font-weight:bold;">Period 1</small>
+                        <select id="c1Type" onchange="toggleCompFilters(1)" style="margin-bottom:5px;"><option value="month">Month</option><option value="year">Full Year</option></select>
+                        <select id="c1m" onchange="runComparison()"></select><select id="c1y" onchange="runComparison()"></select>
+                    </div>
+                    <div style="background:var(--bg); padding:12px; border-radius:18px; border:1px solid var(--border);">
+                        <small style="color:var(--info); font-weight:bold;">Period 2</small>
+                        <select id="c2Type" onchange="toggleCompFilters(2)" style="margin-bottom:5px;"><option value="month">Month</option><option value="year">Full Year</option></select>
+                        <select id="c2m" onchange="runComparison()"></select><select id="c2y" onchange="runComparison()"></select>
+                    </div>
+                </div>
+                <button class="btn-main" style="background:var(--grad-2); margin-top:20px; color:white; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);" onclick="exportComparePDF()">DOWNLOAD COMPARISON PDF</button>
+                <div id="compResult" style="margin-top:20px;"></div>
+            </div>
+        </div>
+
+        <div id="tools" class="page">
+            <div class="glass-card" style="text-align:center;">
+                <img id="logoPreview" src="">
+                <button class="btn-main" style="background:var(--info); font-size:12px; width:auto; padding: 12px 25px;" onclick="document.getElementById('logoInput').click()">UPLOAD LOGO</button>
+                <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogo(event)">
+            </div>
+            
+            <div class="glass-card">
+                <h4 style="margin-top:0;">App Name</h4>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="appNameInput" placeholder="Your Name / Band Name">
+                    <button class="btn-main" style="width:auto; padding:0 15px; margin-top:8px;" onclick="updateAppName()">SAVE</button>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h4 style="margin-top:0;">Directory Management</h4>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="dirInput" placeholder="Name">
+                    <select id="dirType" style="width:110px;"><option value="m">Member</option><option value="o">Org</option></select>
+                    <button class="btn-main" style="width:auto; padding:0 15px; margin-top:8px;" onclick="addDirectory()">ADD</button>
+                </div>
+                <div id="dirChips" class="chip-container"></div>
+            </div>
+
+            <div class="glass-card">
+                <h4 style="margin-top:0;">Security</h4>
+                <div style="display:flex; gap:8px;">
+                    <input type="password" id="newPinInput" maxlength="4" placeholder="New PIN">
+                    <button class="btn-main" style="margin-top:8px;" onclick="confirmPinChange()">CHANGE</button>
+                </div>
+            </div>
+            
+            <div class="glass-card">
+                <button class="btn-main" onclick="toggleTheme()" style="background:linear-gradient(135deg, #1e293b 0%, #334155 100%);">🌓 SWITCH THEME</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+                    <button class="btn-main" style="background:var(--success); margin-top:0;" onclick="secureAction('export')">💾 BACKUP</button>
+                    <button class="btn-main" style="background:var(--info); margin-top:0;" onclick="secureAction('import')">📥 RESTORE</button>
+                </div>
+                <p id="loggedInEmail" style="text-align:center; color:var(--dim); font-size:13px; font-weight:700; margin: 15px 0 5px 0;"></p>
+
+<button class="btn-main" onclick="handleLogout()" style="background:var(--grad-3); margin-top:0; box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35);">LOGOUT / SWITCH USER</button>
+
+<button class="btn-main" style="background:var(--danger); margin-top:15px;" onclick="secureAction('reset')">⚠️ RESET ALL DATA</button>
+                <input type="file" id="inFile" style="display:none;" onchange="handleImport(event)">
+            </div>
+            
+            <div style="text-align:center; opacity:0.5; font-size:11px; margin-top:20px; font-weight:600;">Gig Data Manager v8.0</div>
+        </div>
+    </div>
+
+    <datalist id="orgDList"></datalist><datalist id="memDList"></datalist>
+    <div id="detailModal" class="modal" onclick="closeDetailIfOutside(event)"><div class="modal-content" id="modalBody"></div></div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Failed', err));
+        });
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCldRBfTkU0tHhAPanLg9rxuGvQroz0Rww",
+      authDomain: "personal-gig-management.firebaseapp.com",
+      projectId: "personal-gig-management",
+      storageBucket: "personal-gig-management.firebasestorage.app",
+      messagingSenderId: "667808409165",
+      appId: "1:667808409165:web:fd0d7ce5ce56dc04d61e04"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const dbStore = firebase.firestore();
+
+    dbStore.enablePersistence({synchronizeTabs:true}).catch((err) => {
+        console.log("Persistence Error:", err.code);
+    });
+
+    const { jsPDF } = window.jspdf;
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    let db = { shows: [], theme: 'light', logo: '', pin: '1234', dir: [], state: {}, appName: "Gig Manager Pro" };
+    let pendingAction = null; 
+    let inputPin = "", actionPin = "", currentAction = null, mChart = null, oChart = null, tChart = null, dashLineChart = null;
+    let compData = {}; 
+    let currentUser = null;
+    let unsubscribeSettings = null;
+    let unsubscribeShows = null;
+    
+    function initApp() { 
+        const dbRequest = indexedDB.open("DotxBandDB", 1);
+
+        dbRequest.onupgradeneeded = e => {
+            if(!e.target.result.objectStoreNames.contains("settings")){
+                e.target.result.createObjectStore("settings");
+            }
+        };
+
+        dbRequest.onsuccess = e => {
+            const idb = e.target.result;
+            const tx = idb.transaction("settings", "readonly");
+            const store = tx.objectStore("settings");
+            
+            store.get("data").onsuccess = ev => {
+                if(ev.target.result) {
+                    db = { ...db, ...ev.target.result };
+                    
+                    if(db.theme) {
+                        document.body.setAttribute('data-theme', db.theme);
+                    }
+                    
+                    refreshStaticData();
+                    
+                    if (db.state) {
+                        Object.keys(db.state).forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el && el.tagName === 'SELECT') el.value = db.state[id];
+                        });
+                    }
+                    updateDash();
+                }
+            };
+        };
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('lockScreen').style.display = 'flex'; 
+                if(document.getElementById('loggedInEmail')) {
+                    document.getElementById('loggedInEmail').innerText = "👤 " + user.email;
+                }
+                syncData(); 
+            } else {
+                currentUser = null;
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex'; 
+            }
+        });
+
+        setupDefaultDates();
+        resetForm();
+
+        document.querySelectorAll('select').forEach(el => {
+            el.addEventListener('change', () => {
+                if (!db.state) db.state = {};
+                db.state[el.id] = el.value;
+                saveDB();
+            });
+        });
+    }
+
+    function saveDB() { 
+        const req = indexedDB.open("DotxBandDB", 1);
+        req.onsuccess = e => {
+             e.target.result.transaction("settings", "readwrite").objectStore("settings").put(db, "data");
+        };
+
+        if(currentUser) {
+            const { shows, ...settings } = db;
+            
+            dbStore.collection("users").doc(currentUser.uid).set(settings, { merge: true })
+            .catch(e => console.log("Cloud Settings Save Error:", e));
+
+            const showsByYear = {};
+            for(let y=2023; y<=2030; y++) showsByYear[y] = [];
+
+            shows.forEach(s => {
+                const y = s.date.split('-')[0];
+                if(showsByYear[y]) showsByYear[y].push(s);
+            });
+
+            Object.keys(showsByYear).forEach(y => {
+                dbStore.collection("users").doc(currentUser.uid).collection("years").doc(y).set({ shows: showsByYear[y] })
+                .catch(e => console.log(`Cloud Shows Save Error (${y}):`, e));
+            });
+        }
+        
+        refreshStaticData(); 
+    }
+
+    function syncData() {
+        if(!currentUser) return;
+        const userRef = dbStore.collection("users").doc(currentUser.uid);
+
+        unsubscribeSettings = userRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                const cloudSettings = doc.data();
+                db = { ...db, ...cloudSettings, shows: db.shows || [] }; 
+                refreshStaticData();
+                updateDash();
+            }
+        });
+
+        unsubscribeShows = userRef.collection("years").onSnapshot((snap) => {
+            let allShows = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if(data.shows) allShows = allShows.concat(data.shows);
+            });
+            db.shows = allShows;
+            refreshStaticData();
+            updateDash();
+            if(document.getElementById('calendar').classList.contains('active')) renderCalendar();
+            if(document.getElementById('history').classList.contains('active')) renderHistory();
+            
+            const req = indexedDB.open("DotxBandDB", 1);
+            req.onsuccess = e => {
+                  e.target.result.transaction("settings", "readwrite").objectStore("settings").put(db, "data");
+            };
+        });
+    }
+
+    function handleLogin() {
+        const e = document.getElementById('fEmail').value;
+        const p = document.getElementById('fPass').value;
+        if(!e || !p) return notify("Enter Email & Password", "warning");
+        document.getElementById('authLoader').style.display = 'block';
+        auth.signInWithEmailAndPassword(e, p).catch(err => {
+            document.getElementById('authLoader').style.display = 'none';
+            document.getElementById('authMsg').innerText = err.message;
+        });
+    }
+
+    function handleSignup() {
+        const e = document.getElementById('fEmail').value;
+        const p = document.getElementById('fPass').value;
+        if(!e || !p) return notify("Enter Email & Password", "warning");
+        document.getElementById('authLoader').style.display = 'block';
+        auth.createUserWithEmailAndPassword(e, p).then(() => {
+            saveDB();
+        }).catch(err => {
+            document.getElementById('authLoader').style.display = 'none';
+            document.getElementById('authMsg').innerText = err.message;
+        });
+    }
+    
+    function handleLogout() {
+        showCustomConfirm("You will be logged out. Internet is required to log in again.", () => {
+            if(unsubscribeSettings) unsubscribeSettings();
+            if(unsubscribeShows) unsubscribeShows();
+            auth.signOut().then(() => location.reload());
+        });
+    }
+
+    function runReset() { 
+        showCustomConfirm("Warning! This will verify PIN and DELETE ALL DATA permanently.", () => {
+             secureAction('reset'); 
+        });
+    }
+    
+    function performWipe() {
+         indexedDB.deleteDatabase("DotxBandDB"); 
+         notify("Wiped Successfully", "danger"); 
+         setTimeout(()=>location.reload(), 1000);
+    }
+
+    function updateAppName() {
+        const n = document.getElementById('appNameInput').value;
+        if(n) { db.appName = n; saveDB(); notify("App Name Updated", "success"); }
+    }
+
+    function handleLogo(e) { 
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 100; 
+                const scaleSize = maxWidth / img.width;
+                const newWidth = maxWidth;
+                const newHeight = img.height * scaleSize;
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                
+                db.logo = dataUrl;
+                saveDB(); 
+                notify("Logo Optimized & Saved", "success");
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+
+    function formatD(dateStr) {
+        if(!dateStr) return "-";
+        const [y, m, d] = dateStr.split('-');
+        return `${d}/${m}/${y}`;
+    }
+    
+    function getMonthDiff(d1, d2) {
+        let months;
+        months = (d2.getFullYear() - d1.getFullYear()) * 12;
+        months -= d1.getMonth();
+        months += d2.getMonth();
+        return months <= 0 ? 1 : months + 1;
+    }
+
+    function getAvgDisplay(amt, gigs, mode, monthCount) {
+        if (mode === 'month') {
+            const avgInc = monthCount > 0 ? Math.round(amt / monthCount).toLocaleString() : '0';
+            const avgGigs = monthCount > 0 ? (gigs / monthCount).toFixed(1) : '0';
+            return `Avg: ₹${avgInc} | ${avgGigs} Gigs / Mo`;
+        } else {
+            const avgInc = gigs > 0 ? Math.round(amt / gigs).toLocaleString() : '0';
+            return `Avg: ₹${avgInc} / Show`;
+        }
+    }
+
+    function setupDefaultDates() {
+        const cy = new Date().getFullYear();
+        const cm = new Date().getMonth();
+        const mFilters = ['dashStartMonth','dashEndMonth','anaStartMonth','anaEndMonth','histMonth','c1m','c2m', 'calMonth'];
+        const yFilters = ['dashStartYear','dashEndYear','anaStartYear','anaEndYear','histYear','c1y','c2y', 'calYear'];
+        mFilters.forEach((id, idx) => populateFilters(id, yFilters[idx], id === 'histMonth'));
+        populateChartYearSelectors(cy);
+        
+        if(document.getElementById('dashStartMonth')) {
+            ['dashStartMonth', 'anaStartMonth'].forEach(id => document.getElementById(id).value = 8);
+            ['dashEndMonth', 'anaEndMonth'].forEach(id => document.getElementById(id).value = 7);
+            ['dashStartYear', 'anaStartYear', 'histYear', 'c2y', 'calYear'].forEach(id => document.getElementById(id).value = cy);
+            ['dashEndYear', 'anaEndYear'].forEach(id => document.getElementById(id).value = cy + 1);
+            ['c2m', 'c1m', 'calMonth'].forEach(id => document.getElementById(id).value = cm);
+            document.getElementById('c1y').value = cy - 1;
+        }
+    }
+
+    function populateChartYearSelectors(cy) {
+        const opts = [];
+        for(let i = cy; i >= 2020; i--) opts.push(`<option value="${i}">${i}</option>`);
+        const optsWithNone = ['<option value="none">None</option>', ...opts];
+        document.getElementById('growthY1').innerHTML = opts.join('');
+        document.getElementById('growthY2').innerHTML = optsWithNone.join('');
+        document.getElementById('growthY3').innerHTML = optsWithNone.join('');
+        document.getElementById('growthY1').value = cy;
+        document.getElementById('growthY2').value = "none";
+        document.getElementById('growthY3').value = "none";
+    }
+
+    function notify(msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const t = document.createElement('div'); t.className = 'toast';
+        t.style.background = type === 'success' ? 'var(--success)' : type === 'danger' ? 'var(--danger)' : type === 'warning' ? 'var(--warning)' : 'var(--info)';
+        t.innerText = msg; container.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 3000);
+    }
+
+    function pressNum(n) {
+        if(n === 'C') inputPin = ""; else if(n === 'B') inputPin = inputPin.slice(0, -1); else if(inputPin.length < 4) inputPin += n;
+        const d = document.getElementById('loginDots').children; for(let i=0; i<4; i++) d[i].className = i < inputPin.length ? 'dot active' : 'dot';
+        if(inputPin.length === 4) { 
+            if(inputPin === db.pin) { 
+                document.getElementById('lockScreen').style.display='none'; 
+                inputPin=""; 
+                if (db.state) {
+                    Object.keys(db.state).forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el && el.tagName === 'SELECT') el.value = db.state[id];
+                    });
+                }
+                updateDash();
+            } else { 
+                notify("Wrong PIN","danger"); inputPin=""; resetDots('loginDots'); 
+            } 
+        }
+    }
+    
+    function pressActionNum(n) {
+        if(n === 'B') actionPin = actionPin.slice(0, -1); else if(actionPin.length < 4) actionPin += n;
+        const d = document.getElementById('actionDots').children; for(let i=0; i<4; i++) d[i].className = i < actionPin.length ? 'dot active' : 'dot';
+        if(actionPin.length === 4) { if(actionPin === db.pin) { const act = currentAction; closePinModal(); setTimeout(() => { if(act==='export') runExport(); if(act==='import') document.getElementById('inFile').click(); 
+if(act==='reset') performWipe(); }, 100); } else { notify("Wrong PIN","danger"); actionPin=""; resetDots('actionDots'); } }
+    }
+    function resetDots(id) { const d = document.getElementById(id).children; for(let i=0; i<4; i++) d[i].className = 'dot'; }
+    function secureAction(a) { currentAction = a; actionPin = ""; resetDots('actionDots'); document.getElementById('pinModal').style.display = 'flex'; }
+    function closePinModal() { document.getElementById('pinModal').style.display = 'none'; }
+    function confirmPinChange() { const np = document.getElementById('newPinInput').value; if(np.length===4){ db.pin=np; saveDB(); notify("PIN Updated","success"); document.getElementById('newPinInput').value=""; } else notify("Enter 4 digits","warning"); }
+
+    function saveAsPDF(doc, filename) {
+        const blob = doc.output('blob'); const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 200);
+    }
+
+    function exportReport(title, entity, data, sl, el, mCount) {
+        const doc = new jsPDF(); 
+        if(db.logo) try { doc.addImage(db.logo, 'JPEG', 14, 10, 15, 15); } catch(e){}
+        doc.setFontSize(16); doc.setTextColor(139, 92, 246); doc.text(title + " Report", 35, 18);
+        
+        const total = data.reduce((a,b)=>a+b.amt, 0);
+        
+        const avgShow = data.length > 0 ? Math.round(total / data.length) : 0;
+        const avgIncMonth = mCount > 0 ? Math.round(total / mCount) : 0;
+        const avgGigsMonth = mCount > 0 ? (data.length / mCount).toFixed(1) : 0;
+        
+        doc.setFontSize(10); doc.setTextColor(0);
+        doc.text(`Name: ${entity}`, 14, 30);
+        doc.text(`Period: ${sl} to ${el}`, 14, 35);
+        doc.text(`Total Shows: ${data.length} | Total Earnings: INR ${total.toLocaleString()}`, 14, 40);
+        doc.text(`Avg Income/Show: INR ${avgShow.toLocaleString()}`, 14, 45);
+        doc.text(`Avg Income/Month: INR ${avgIncMonth.toLocaleString()} | Avg Gigs/Month: ${avgGigsMonth}`, 14, 50);
+        
+        doc.autoTable({ 
+            head: [['Date', 'Venue', 'Organizer', 'Amount ₹', 'Note']], 
+            body: data.map(i => [formatD(i.date), i.venue, i.org, i.amt.toLocaleString(), i.note || '-']), 
+            startY: 55 
+        });
+        addFooter(doc); saveAsPDF(doc, `${entity}_Report.pdf`);
+    }
+
+    function exportOrgFullPDF() {
+        const sm = parseInt(document.getElementById('anaStartMonth').value); const sy = parseInt(document.getElementById('anaStartYear').value);
+        const em = parseInt(document.getElementById('anaEndMonth').value); const ey = parseInt(document.getElementById('anaEndYear').value);
+        const start = new Date(sy, sm, 1); const end = new Date(ey, em, 31);
+        const doc = new jsPDF(); if(db.logo) try { doc.addImage(db.logo, 'JPEG', 14, 10, 15, 15); } catch(e){}
+        doc.setFontSize(16); doc.setTextColor(139, 92, 246); doc.text("Organizer Summary Report", 35, 18);
+        doc.setFontSize(10); doc.setTextColor(0);
+        doc.text(`Period: ${months[sm]} ${sy} to ${months[em]} ${ey}`, 14, 30);
+        const orgMap = {}; let tI = 0, tS = 0;
+        const todayStr = new Date().toLocaleDateString('en-CA');
+
+        db.shows.forEach(x => { 
+            const d = new Date(x.date); 
+            if(d >= start && d <= end && x.date < todayStr) {
+                if(!orgMap[x.org]) orgMap[x.org] = { count: 0, deal: 0 };
+                orgMap[x.org].count++; orgMap[x.org].deal += x.deal;
+                tI += x.deal; tS++;
+            }
+        });
+        const rows = Object.keys(orgMap).map(k => [k, orgMap[k].count, ((orgMap[k].deal/tI)*100).toFixed(1)+"%", `INR ${orgMap[k].deal.toLocaleString()}`]);
+        doc.autoTable({ head: [['Organizer', 'Gigs', '%', 'Total Deal']], body: rows, startY: 38 });
+        
+        const avgDeal = tS > 0 ? Math.round(tI / tS) : 0;
+        doc.text(`Total Gigs: ${tS} | Total Deal: INR ${tI.toLocaleString()}`, 14, doc.lastAutoTable.finalY + 10);
+        doc.text(`Average Deal per Show: INR ${avgDeal.toLocaleString()}`, 14, doc.lastAutoTable.finalY + 15);
+        
+        addFooter(doc); saveAsPDF(doc, `Org_Summary.pdf`);
+    }
+
+    function exportGigPDF(id) { 
+        const s = db.shows.find(x => x.id === id); 
+        const doc = new jsPDF(); 
+        if(db.logo) try { doc.addImage(db.logo, 'JPEG', 14, 10, 15, 15); } catch(e){} 
+        
+        doc.setFontSize(16); doc.setTextColor(139, 92, 246); doc.text(s.venue, 105, 20, {align: 'center'}); 
+        doc.setFontSize(11); doc.setTextColor(0);
+        doc.text(`${s.org} | ${formatD(s.date)}`, 105, 27, {align: 'center'});
+
+        doc.setDrawColor(200); doc.setFillColor(245, 247, 250); 
+        doc.rect(60, 35, 90, 20, 'FD'); 
+        doc.setFontSize(10); doc.setTextColor(100);
+        doc.text("Total Deal", 105, 42, {align: 'center'});
+        doc.setFontSize(14); doc.setTextColor(16, 185, 129); 
+        doc.text(`INR ${s.deal.toLocaleString()}`, 105, 50, {align: 'center'});
+
+        if(s.note) {
+            doc.setFontSize(10); doc.setTextColor(80);
+            doc.text(`Note: ${s.note}`, 14, 65);
+        }
+
+        const memTotal = s.payouts.reduce((a, b) => a + b.amt, 0);
+
+        doc.autoTable({
+            head: [['Name', 'Amount', 'Mode', 'Note']], 
+            body: s.payouts.map(p => [p.name, p.amt.toLocaleString(), p.mode, p.note || '-']), 
+            startY: s.note ? 70 : 65,
+            headStyles: { fillColor: [220, 220, 220], textColor: 50, fontStyle: 'bold' },
+            theme: 'grid'
+        }); 
+        
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFillColor(139, 92, 246); 
+        doc.rect(14, finalY, 182, 10, 'F');
+        doc.setTextColor(255); doc.setFontSize(11);
+        doc.text("Total Distributed", 20, finalY + 7);
+        doc.text(`INR ${memTotal.toLocaleString()}`, 190, finalY + 7, {align: 'right'});
+
+        addFooter(doc); 
+        saveAsPDF(doc, `Gig_${s.venue}.pdf`); 
+    }
+
+    async function exportComparePDF() {
+        const mem = document.getElementById('compMemSelect').value;
+        const res1 = calculatePeriodData(1, mem);
+        const res2 = calculatePeriodData(2, mem);
+        const doc = new jsPDF();
+        if(db.logo) try { doc.addImage(db.logo, 'JPEG', 14, 10, 15, 15); } catch(e){}
+        doc.setFontSize(16); doc.setTextColor(139, 92, 246); doc.text("Advanced Comparison Report", 35, 18);
+        doc.setFontSize(10); doc.setTextColor(0);
+        doc.text(`Entity: ${mem}`, 14, 30);
+        doc.text(`P1: ${res1.label} | P2: ${res2.label}`, 14, 35);
+        
+        const avg1 = res1.gigs > 0 ? Math.round(res1.amt / res1.gigs) : 0;
+        const avg2 = res2.gigs > 0 ? Math.round(res2.amt / res2.gigs) : 0;
+        
+        doc.autoTable({ 
+            head: [['Metric', res1.label, res2.label, 'Diff']], 
+            body: [
+                ['Total Income', res1.amt.toLocaleString(), res2.amt.toLocaleString(), (res2.amt-res1.amt).toLocaleString()], 
+                ['Total Shows', res1.gigs, res2.gigs, res2.gigs-res1.gigs],
+                ['Avg Income/Show', avg1.toLocaleString(), avg2.toLocaleString(), (avg2-avg1).toLocaleString()]
+            ], 
+            startY: 42 
+        });
+
+        const allOrgs = Array.from(new Set([...Object.keys(res1.orgs), ...Object.keys(res2.orgs)])).sort();
+        const orgRows = allOrgs.map(n => [n, res1.orgs[n]?.gigs || 0, `INR ${res1.orgs[n]?.earnings.toLocaleString() || 0}`, res2.orgs[n]?.gigs || 0, `INR ${res2.orgs[n]?.earnings.toLocaleString() || 0}`]);
+        doc.text("Organizer Comparison Breakdown", 14, doc.lastAutoTable.finalY + 15);
+        doc.autoTable({ head: [['Organizer', 'P1 Gigs', 'P1 Total', 'P2 Gigs', 'P2 Total']], body: orgRows, startY: doc.lastAutoTable.finalY + 20 });
+        addFooter(doc); saveAsPDF(doc, `Comparison_${mem}.pdf`);
+    }
+
+    function toggleCompFilters(id) { document.getElementById(`c${id}m`).style.display = document.getElementById(`c${id}Type`).value === 'year' ? 'none' : 'inline-block'; runComparison(); }
+    
+    function calculatePeriodData(id, mem) {
+        const type = document.getElementById(`c${id}Type`).value; const m = parseInt(document.getElementById(`c${id}m`).value); const y = parseInt(document.getElementById(`c${id}y`).value);
+        let amt = 0, gigs = 0, orgs = {}, list = [];
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const sLbl = type === 'year' ? `Jan ${y}` : `${months[m]} ${y}`;
+        const eLbl = type === 'year' ? `Dec ${y}` : `${months[m]} ${y}`;
+        const label = type === 'year' ? `Year ${y}` : `${months[m].slice(0,3)} ${y}`;
+        let mCount = 1;
+        if (type === 'year') { mCount = 12; }
+
+        db.shows.forEach(s => { 
+            if(s.date >= todayStr) return;
+            const sd = new Date(s.date);
+            const match = type === 'year' ? (sd.getFullYear() === y) : (sd.getFullYear() === y && sd.getMonth() === m);
+            if(match) { const p = s.payouts.find(px => px.name === mem); 
+                if(p) { 
+                    amt += p.amt; 
+                    gigs++; 
+                    if(!orgs[s.org]) orgs[s.org] = { gigs: 0, earnings: 0, list: [] }; 
+                    orgs[s.org].gigs++; 
+                    orgs[s.org].earnings += p.amt; 
+                    const gigInfo = {id: s.id, date: s.date, venue: s.venue, org: s.org, amt: p.amt, note: p.note};
+                    orgs[s.org].list.push(gigInfo);
+                    list.push(gigInfo);
+                } 
+            }
+        });
+        return { amt, gigs, orgs, label, list, sLbl, eLbl, mCount };
+    }
+
+    function runComparison() {
+        const mem = document.getElementById('compMemSelect').value; 
+        const avgMode = document.getElementById('compAvgMode').value;
+        const res1 = calculatePeriodData(1, mem); 
+        const res2 = calculatePeriodData(2, mem);
+        compData = { p1: res1, p2: res2, mem: mem };
+        const allOrgs = Array.from(new Set([...Object.keys(res1.orgs), ...Object.keys(res2.orgs)])).sort();
+        let t1G = 0, t1E = 0, t2G = 0, t2E = 0;
+        let orgHtml = allOrgs.map(name => { 
+            const o1 = res1.orgs[name] || { gigs: 0, earnings: 0, list: [] }; 
+            const o2 = res2.orgs[name] || { gigs: 0, earnings: 0, list: [] };
+            t1G += o1.gigs; t1E += o1.earnings;
+            t2G += o2.gigs; t2E += o2.earnings;
+            const c1 = o1.list.length ? `onclick="openOrgDetail('p1', '${name}')" class="clickable-cell"` : '';
+            const c2 = o2.list.length ? `onclick="openOrgDetail('p2', '${name}')" class="clickable-cell"` : '';
+            return `<div class="bk-row"><div style="width:40%"><strong>${name}</strong></div><div style="width:30%" ${c1}>${o1.gigs} (₹${o1.earnings.toLocaleString()})</div><div style="width:30%" ${c2}><strong>${o2.gigs} (₹${o2.earnings.toLocaleString()})</strong></div></div>`;
+        }).join('');
+        orgHtml += `<div class="bk-row" style="border-top:2px solid var(--border); color:var(--text); font-weight:bold;"><div style="width:40%">TOTAL</div><div style="width:30%">${t1G} (₹${t1E.toLocaleString()})</div><div style="width:30%">${t2G} (₹${t2E.toLocaleString()})</div></div>`;
+        const avg1 = getAvgDisplay(res1.amt, res1.gigs, avgMode, res1.mCount);
+        const avg2 = getAvgDisplay(res2.amt, res2.gigs, avgMode, res2.mCount);
+        document.getElementById('compResult').innerHTML = `
+        <div class="comp-grid">
+            <div class="comp-card" onclick="openCompDetail('p1')"><small>${res1.label}</small><h3>₹${res1.amt.toLocaleString()}</h3><p>${res1.gigs} Gigs</p><small style="opacity:0.7; border-top:1px solid rgba(255,255,255,0.3); padding-top:4px; display:block; margin-top:4px;">${avg1}</small></div>
+            <div class="comp-card" onclick="openCompDetail('p2')"><small>${res2.label}</small><h3>₹${res2.amt.toLocaleString()}</h3><p>${res2.gigs} Gigs</p><small style="opacity:0.7; border-top:1px solid rgba(255,255,255,0.3); padding-top:4px; display:block; margin-top:4px;">${avg2}</small></div>
+        </div>
+        <div class="glass-card" style="margin-top:10px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim)"><span>Organizer</span><span>P1 (G/₹)</span><span>P2 (G/₹)</span></div>${orgHtml || '<p>No data</p>'}</div>`;
+    }
+
+    function openCompDetail(key) {
+        const d = compData[key];
+        if(d && d.list.length > 0) {
+            renderBreakdownModal(`${d.label} Breakdown`, compData.mem, d.list, d.sLbl, d.eLbl);
+        } else {
+            notify("No data for this period", "warning");
+        }
+    }
+
+    function openOrgDetail(key, orgName) {
+        const d = compData[key];
+        if(d && d.orgs[orgName] && d.orgs[orgName].list.length > 0) {
+             renderBreakdownModal(`${orgName} (${d.label})`, compData.mem, d.orgs[orgName].list, d.sLbl, d.eLbl);
+        }
+    }
+
+    function updateDash() {
+        const mem = document.getElementById('dashMemSelect').value; if(!mem) return;
+        const avgMode = document.getElementById('dashAvgMode').value;
+        const todayStr = new Date().toLocaleDateString('en-CA'); 
+        const now = new Date();
+        let lAmt=0, lG=0, mAmt=0, mG=0, yAmt=0, yG=0, cAmt=0, cG=0;
+        const start = new Date(document.getElementById('dashStartYear').value, document.getElementById('dashStartMonth').value, 1);
+        const end = new Date(document.getElementById('dashEndYear').value, document.getElementById('dashEndMonth').value, 31);
+        const gy1 = parseInt(document.getElementById('growthY1').value);
+        const gy2 = document.getElementById('growthY2').value === 'none' ? null : parseInt(document.getElementById('growthY2').value);
+        const gy3 = document.getElementById('growthY3').value === 'none' ? null : parseInt(document.getElementById('growthY3').value);
+        let gData1 = new Array(12).fill(0); let gData2 = new Array(12).fill(0); let gData3 = new Array(12).fill(0);
+        let gCount1 = new Array(12).fill(0); let gCount2 = new Array(12).fill(0); let gCount3 = new Array(12).fill(0);
+        let reminders = []; let earliestDate = new Date(); 
+
+        db.shows.forEach(s => { 
+            const sd = new Date(s.date); 
+            if(s.date === todayStr) { reminders.push(s); }
+            if(s.date < todayStr) {
+                if (sd < earliestDate) earliestDate = sd;
+                s.payouts.forEach(p => { 
+                    if(p.name === mem) { 
+                        lAmt += p.amt; lG++; 
+                        if(sd.getMonth()===now.getMonth() && sd.getFullYear()===now.getFullYear()){mAmt+=p.amt; mG++;} 
+                        if(sd.getFullYear()===now.getFullYear()){ yAmt+=p.amt; yG++; } 
+                        if(sd>=start&&sd<=end){cAmt+=p.amt; cG++;} 
+                        if(sd.getFullYear() === gy1) { gData1[sd.getMonth()] += p.amt; gCount1[sd.getMonth()]++; }
+                        if(gy2 && sd.getFullYear() === gy2) { gData2[sd.getMonth()] += p.amt; gCount2[sd.getMonth()]++; }
+                        if(gy3 && sd.getFullYear() === gy3) { gData3[sd.getMonth()] += p.amt; gCount3[sd.getMonth()]++; }
+                    }
+                });
+            }
+        });
+
+        const lifetimeMonths = getMonthDiff(earliestDate, now);
+        const yearMonths = (now.getMonth() + 1); 
+        const customMonths = getMonthDiff(start, end);
+
+        const rDiv = document.getElementById('reminderArea');
+        if(reminders.length > 0) {
+            rDiv.innerHTML = reminders.map(r => `<div class="reminder-box" onclick="viewGigDetails(${r.id})">🔔 TODAY: ${r.venue} (${r.org})</div>`).join('');
+            rDiv.style.display = 'block';
+        } else {
+            rDiv.style.display = 'none';
+        }
+
+        document.getElementById('dashLifetimeAmt').innerHTML=`₹${lAmt.toLocaleString()}<br><span style="font-size:10px; opacity:0.8; font-weight:normal">${getAvgDisplay(lAmt, lG, avgMode, lifetimeMonths)}</span>`; 
+        document.getElementById('dashLifetimeGigs').innerText=`${lG} Shows`;
+        document.getElementById('dashMonthAmt').innerHTML=`₹${mAmt.toLocaleString()}<br><span style="font-size:10px; opacity:0.8; font-weight:normal">${getAvgDisplay(mAmt, mG, avgMode, 1)}</span>`; 
+        document.getElementById('dashMonthGigs').innerText=`${mG} Gigs`;
+        document.getElementById('dashYearAmt').innerHTML=`₹${yAmt.toLocaleString()}<br><span style="font-size:10px; opacity:0.8; font-weight:normal">${getAvgDisplay(yAmt, yG, avgMode, yearMonths)}</span>`; 
+        document.getElementById('dashYearGigs').innerText=`${yG} Gigs`;
+        document.getElementById('dashCustomAmt').innerHTML=`₹${cAmt.toLocaleString()}<br><span style="font-size:10px; opacity:0.8; font-weight:normal">${getAvgDisplay(cAmt, cG, avgMode, customMonths)}</span>`; 
+        document.getElementById('dashCustomGigs').innerText=`${cG} Shows`;
+        renderDashGrowthChart(gData1, gData2, gData3, gy1, gy2, gy3, gCount1, gCount2, gCount3);
+    }
+
+    function renderDashGrowthChart(d1, d2, d3, y1, y2, y3, c1, c2, c3) {
+        if(dashLineChart) dashLineChart.destroy();
+        const ctx = document.getElementById('dashGrowthChart').getContext('2d');
+        let datasets = [{ label: y1, data: d1, gigCounts: c1, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', tension: 0.3, borderWidth: 3, pointRadius: 3 }];
+        if(y2 !== null) { datasets.push({ label: y2, data: d2, gigCounts: c2, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.0)', tension: 0.3, borderWidth: 3, pointRadius: 3 }); }
+        if(y3 !== null) { datasets.push({ label: y3, data: d3, gigCounts: c3, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.0)', tension: 0.3, borderWidth: 3, pointRadius: 3 }); }
+        dashLineChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: months.map(m => m.substring(0,3)), datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: {family: 'Outfit'} } }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += '₹' + context.parsed.y.toLocaleString(); } let count = context.dataset.gigCounts[context.dataIndex]; return label + ' (' + count + ' Gigs)'; } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10, family: 'Outfit' } } }, x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Outfit' } } } } }
+        });
+    }
+
+    function refreshStaticData() {
+        const ms = db.dir.filter(d=>d.type==='m').map(d=>d.name).sort(); 
+        const os = db.dir.filter(d=>d.type==='o').map(d=>d.name).sort();
+        
+        if(!ms.includes("Srikanta Banerjee")) ms.unshift("Srikanta Banerjee");
+
+        const dashMem = document.getElementById('dashMemSelect').value; const compMem = document.getElementById('compMemSelect').value;
+        document.getElementById('dashMemSelect').innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
+        document.getElementById('dashMemSelect').value = dashMem || ms[0] || "";
+        document.getElementById('compMemSelect').innerHTML = ms.map(m=>`<option value="${m}">${m}</option>`).join('');
+        document.getElementById('compMemSelect').value = compMem || ms[0] || "";
+        document.getElementById('memDList').innerHTML = ms.map(m=>`<option value="${m}">`).join(''); document.getElementById('orgDList').innerHTML = os.map(o=>`<option value="${o}">`).join('');
+        document.getElementById('dirChips').innerHTML = db.dir.map((d,i)=>`<div class="chip">${d.name} (${d.type.toUpperCase()}) <span onclick="delDir(${i})">×</span></div>`).join('');
+        if(db.logo) { const lp = document.getElementById('logoPreview'); lp.src = db.logo; lp.style.display = 'block'; }
+        
+        const safeAppName = db.appName || "Gig Manager Pro";
+        document.getElementById('mainAppTitle').innerText = safeAppName;
+        document.getElementById('pageTitle').innerText = safeAppName;
+        if(document.getElementById('appNameInput')) document.getElementById('appNameInput').value = safeAppName;
+    }
+
+    function showPage(p) { 
+        document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); 
+        document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); 
+        document.getElementById(p).classList.add('active'); 
+        if(p==='dash') updateDash(); 
+        if(p==='history') renderHistory(); 
+        if(p==='calendar') renderCalendar();
+        if(p==='analysis') toggleAnalysisMode(); 
+        if(p==='compare') runComparison(); 
+        document.getElementById('btn-'+p)?.classList.add('active'); 
+    }
+    
+    function populateFilters(m, y, a=true) { 
+        document.getElementById(m).innerHTML = (a?'<option value="all">All Months</option>':'')+months.map((x,i)=>`<option value="${i}">${x.substring(0,3)}</option>`).join(''); 
+        const yrs=[2023,2024,2025,2026,2027,2028]; 
+        let yOpts = yrs.map(v=>`<option value="${v}">${v}</option>`).join('');
+        if(y === 'histYear') { yOpts = '<option value="lifetime">Lifetime</option>' + yOpts; }
+        document.getElementById(y).innerHTML = yOpts; 
+    }
+
+    function addDirectory() { const v=document.getElementById('dirInput').value, t=document.getElementById('dirType').value; if(v){ db.dir.push({name:v, type:t}); saveDB(); document.getElementById('dirInput').value=""; } }
+    function delDir(i) { db.dir.splice(i,1); saveDB(); }
+
+    function addRow(p='') { 
+        const d=document.createElement('div'); d.className='payout-row'; d.style.marginBottom = "10px";
+        d.innerHTML=`<input class="pn" list="memDList" placeholder="Name" value="${p}"><div style="display:flex; gap:5px;"><input type="number" class="pa" placeholder="₹"><select class="pm"><option value="Cash">Cash</option><option value="Online">Online</option></select></div><input type="text" class="pnote" placeholder="Payment Note/Txn ID" style="margin-top:5px;"><button onclick="this.parentElement.remove()" style="color:var(--danger); background:none; border:none; float:right; font-size:18px;">×</button><div style="clear:both"></div>`; 
+        document.getElementById('payoutArea').appendChild(d); 
+    }
+
+    // --- CALCULATE DUE/ADVANCE ---
+    function calcDue() {
+        const deal = parseFloat(document.getElementById('gDeal').value || 0);
+        const adv = parseFloat(document.getElementById('gAdvance').value || 0);
+        let due = deal - adv;
+        if (due < 0) due = 0;
+        document.getElementById('gDue').value = due > 0 ? due : '';
+    }
+
+    function calcAdv() {
+        const deal = parseFloat(document.getElementById('gDeal').value || 0);
+        const due = parseFloat(document.getElementById('gDue').value || 0);
+        let adv = deal - due;
+        if (adv < 0) adv = 0;
+        document.getElementById('gAdvance').value = adv > 0 ? adv : '';
+    }
+
+    // --- SMART SAVESHOW LOGIC ---
+    function saveShow() { 
+        try {
+            const v = document.getElementById('vName').value; 
+            if(!v) return notify("Venue name is required! ⚠️", "warning"); 
+            
+            const pA=[]; 
+            let memberTotal = 0;
+            
+            document.querySelectorAll('.payout-row').forEach(r=>{ 
+                const n=r.querySelector('.pn').value; 
+                const amt=parseFloat(r.querySelector('.pa').value||0);
+                if(n) {
+                    pA.push({ name:n, amt:amt, mode:r.querySelector('.pm').value, note:r.querySelector('.pnote').value||'' }); 
+                    memberTotal += amt;
+                }
+            }); 
+            
+            const dealAmt = parseFloat(document.getElementById('gDeal').value||0);
+            const dueAmt = parseFloat(document.getElementById('gDue').value||0);
+            const advAmt = parseFloat(document.getElementById('gAdvance').value||0);
+            
+            const totalReceived = dealAmt - dueAmt; 
+            const sbIncome = totalReceived - memberTotal;
+
+            if(sbIncome > 0) {
+                pA.push({ name: "Srikanta Banerjee", amt: sbIncome, mode: "Cash", note: "Main Income" });
+            }
+
+            const id = document.getElementById('editId').value; 
+            const g = { 
+                id: id ? parseInt(id) : Date.now(), 
+                venue: v, 
+                org: document.getElementById('orgName').value, 
+                date: document.getElementById('gDate').value, 
+                status: document.getElementById('gStatus').value || 'Knock', 
+                type: document.getElementById('gType').value || 'General', 
+                deal: dealAmt, 
+                advAmt: advAmt,             
+                advMode: document.getElementById('gAdvMode').value, 
+                advNote: document.getElementById('gAdvNote').value, 
+                dueAmt: dueAmt,             
+                note: document.getElementById('gNote').value, 
+                payouts: pA 
+            }; 
+            
+            if(id) db.shows = db.shows.map(s => s.id == id ? g : s); 
+            else db.shows.push(g); 
+            
+            saveDB(); 
+            resetForm();
+            
+            if(id) notify("Gig Updated Successfully! ✅", "success");
+            else notify("New Gig Added! 🎉", "success");
+            
+            showPage('history');
+            
+        } catch(e) {
+            console.error(e);
+            notify("Saved, but encountered an error", "warning");
+        }
+    }
+
+    // --- MARK DUE AS PAID ---
+    function markAsPaid(id) {
+        const gig = db.shows.find(x => x.id === id);
+        if(!gig) return;
+
+        showCustomConfirm("Mark this gig's due as fully paid?", function() {
+            gig.advAmt = gig.deal; 
+            gig.dueAmt = 0;        
+            
+            if (gig.advNote) {
+                gig.advNote += " | Due Cleared";
+            } else {
+                gig.advNote = "Due Cleared";
+            }
+
+            let memberTotal = 0;
+            gig.payouts.forEach(p => {
+                if(p.name !== "Srikanta Banerjee") memberTotal += p.amt;
+            });
+            
+            gig.payouts = gig.payouts.filter(p => p.name !== "Srikanta Banerjee");
+            const sbIncome = gig.deal - memberTotal;
+            
+            if(sbIncome > 0) {
+                gig.payouts.push({ name: "Srikanta Banerjee", amt: sbIncome, mode: "Cash", note: "Main Income" });
+            }
+
+            saveDB();
+            notify("Due Cleared Successfully! ✅", "success");
+            
+            viewGigDetails(id); 
+            renderHistory();
+            updateDash();
+            if(document.getElementById('calendar').classList.contains('active')) renderCalendar();
+        });
+    }
+
+    function deleteGig(id) { 
+        document.getElementById('detailModal').style.display = 'none';
+
+        showCustomConfirm("Delete this gig permanently?", function() {
+            db.shows = db.shows.filter(s => s.id !== id);
+            saveDB();
+            renderHistory(); 
+            updateDash();
+            if(document.getElementById('calendar').classList.contains('active')) renderCalendar();
+            notify("Gig Deleted Successfully 🗑️", "danger");
+        });
+    }
+
+    function showCustomConfirm(msg, callback) {
+        document.getElementById('confMsg').innerText = msg;
+        pendingAction = callback;
+        const oldBtn = document.getElementById('btnConfYes');
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        newBtn.onclick = function() {
+            document.getElementById('confirmModal').style.display = 'none';
+            if (pendingAction) pendingAction();
+            pendingAction = null;
+        };
+        document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    // --- NEW SMART HISTORY RENDER WITH TOTALS ---
+    function renderHistory() { 
+        const fM = document.getElementById('histMonth').value; 
+        const fY = document.getElementById('histYear').value; 
+        const q = document.getElementById('histSearch').value.toLowerCase().trim();
+        
+        let totalDeal = 0;
+        let totalPaid = 0;
+        let totalDue = 0;
+
+        const list = db.shows.filter(s => { 
+            const d = new Date(s.date); 
+            let dateMatch = false; 
+            
+            if(fY === 'lifetime') { 
+                dateMatch = true; 
+            } else { 
+                dateMatch = d.getFullYear().toString() === fY && (fM === 'all' || d.getMonth().toString() === fM); 
+            } 
+            
+            if(!dateMatch) return false; 
+            
+            let currentDue = s.dueAmt !== undefined ? s.dueAmt : (s.deal - (s.advAmt||0));
+            
+            if(q === 'due') {
+                if(currentDue <= 0) return false;
+            } else if (q) {
+                const searchStr = `${s.venue} ${s.org} ${formatD(s.date)} ${s.deal} ${s.type || ''} ${s.status || ''}`.toLowerCase(); 
+                if(!searchStr.includes(q)) return false;
+            }
+            
+            totalDeal += s.deal;
+            totalDue += currentDue;
+            totalPaid += (s.deal - currentDue);
+
+            return true; 
+        }).sort((a,b)=>new Date(b.date)-new Date(a.date)); 
+        
+        document.getElementById('histTotDeal').innerText = `₹${totalDeal.toLocaleString()}`;
+        document.getElementById('histTotPaid').innerText = `₹${totalPaid.toLocaleString()}`;
+        document.getElementById('histTotDue').innerText = `₹${totalDue.toLocaleString()}`;
+
+        document.getElementById('hList').innerHTML = list.map(s => {
+            const statDot = s.status === 'Complete' ? '🟢' : s.status === 'Final' ? '🔴' : '🟡';
+            let dueAmt = s.dueAmt !== undefined ? s.dueAmt : (s.deal - (s.advAmt||0)); 
+            let dueBadge = dueAmt > 0 ? `<span style="font-size:10px; background:rgba(239, 68, 68, 0.1); color:var(--danger); padding:2px 6px; border-radius:6px; font-weight:bold;">Due: ₹${dueAmt}</span>` : `<span style="font-size:10px; background:rgba(16, 185, 129, 0.1); color:var(--success); padding:2px 6px; border-radius:6px; font-weight:bold;">✅ Paid</span>`;
+
+            return `<div class="glass-card" style="border-left:4px solid var(--accent);" onclick="viewGigDetails(${s.id})"><div style="display:flex; justify-content:space-between;"><strong>${s.venue}</strong><span>${statDot}</span></div><small>${formatD(s.date)} | ${s.org}</small><div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;"><span style="color:var(--success); font-weight:bold;">₹${s.deal}</span>${dueBadge}</div></div>`;
+        }).join('') || '<p style="text-align:center; opacity:0.6;">No Data Found</p>'; 
+    }
+    
+    function renderCalendar() {
+        const m = parseInt(document.getElementById('calMonth').value);
+        const y = parseInt(document.getElementById('calYear').value);
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        
+        const todayStr = new Date().toLocaleDateString('en-CA');
+
+        let html = '';
+        for(let i=0; i<firstDay; i++) html += `<div></div>`;
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const dateStr = `${y}-${(m+1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+            const dayShows = db.shows.filter(s => s.date === dateStr);
+            
+            if(dayShows.length > 0) {
+                const hasComplete = dayShows.some(s => s.status === 'Complete');
+                const hasFinal = dayShows.some(s => s.status === 'Final');
+                const hasKnock = dayShows.some(s => s.status === 'Knock');
+
+                let bgColor = 'var(--bg)';
+                let textColor = 'white';
+                let shadow = 'none';
+
+                if (hasComplete) {
+                    bgColor = 'var(--success)';
+                    shadow = 'rgba(16, 185, 129, 0.4)';
+                } else if (hasFinal) {
+                    bgColor = 'var(--danger)'; 
+                    shadow = 'rgba(239, 68, 68, 0.4)';
+                } else if (hasKnock) {
+                    bgColor = 'var(--warning)'; 
+                    shadow = 'rgba(245, 158, 11, 0.4)';
+                } else {
+                    bgColor = (dateStr < todayStr) ? 'var(--success)' : 'var(--warning)';
+                    shadow = (dateStr < todayStr) ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)';
+                }
+
+                html += `<div style="background:${bgColor}; color:${textColor}; border-radius:8px; padding:10px 0; text-align:center; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px ${shadow};" onclick="openCalDay('${dateStr}')">${d}</div>`;
+            } else {
+                html += `<div style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px 0; text-align:center; cursor:pointer;" onclick="notify('Free Date', 'info')">${d}</div>`;
+            }
+        }
+        document.getElementById('calGrid').innerHTML = html;
+    }
+
+    function openCalDay(dateStr) {
+        const shows = db.shows.filter(s => s.date === dateStr);
+        if(shows.length === 1) {
+            viewGigDetails(shows[0].id);
+        } else if(shows.length > 1) {
+            let html = `<span class="close-x" onclick="document.getElementById('detailModal').style.display='none'">×</span><h3 style="margin-bottom:15px;">Shows on ${formatD(dateStr)}</h3>`;
+            shows.forEach(s => {
+                const statDot = s.status === 'Complete' ? '🟢' : s.status === 'Final' ? '🔴' : '🟡';
+                html += `<div class="bk-row" onclick="viewGigDetails(${s.id})" style="cursor:pointer; background:var(--bg); padding:10px; border-radius:8px; margin-bottom:8px;"><div><strong style="color:var(--accent);">${s.venue} ${statDot}</strong><br><small>${s.org}</small></div><strong>₹${s.deal}</strong></div>`;
+            });
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+    }
+
+    function viewGigDetails(id) { 
+        const s=db.shows.find(x=>x.id===id); 
+        const memTotal = s.payouts.reduce((a, b) => a + b.amt, 0);
+        
+        const typeBadge = s.type ? `<span style="background:var(--info); color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:bold; margin-left:5px;">${s.type}</span>` : '';
+        const statusBadge = s.status ? `<span style="background:${s.status==='Complete'?'var(--success)':s.status==='Final'?'var(--danger)':'var(--warning)'}; color:white; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:bold; margin-left:5px;">${s.status}</span>` : '';
+
+        let advAmt = s.advAmt || 0;
+        let dueAmt = s.dueAmt !== undefined ? s.dueAmt : (s.deal - (s.advAmt||0));
+        
+        let paymentBox = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <div style="background:var(--bg); padding:10px; border-radius:12px; border:1px solid var(--border); text-align:center;">
+                <span style="display:block; font-size:11px; color:var(--dim);">Total Deal</span>
+                <span style="font-size:16px; font-weight:bold; color:var(--text);">₹${s.deal.toLocaleString()}</span>
+            </div>
+            <div style="background:var(--bg); padding:10px; border-radius:12px; border:1px solid ${dueAmt <= 0 ? 'var(--success)' : 'var(--danger)'}; text-align:center;">
+                <span style="display:block; font-size:11px; color:var(--dim);">Due Amount</span>
+                <span style="font-size:16px; font-weight:bold; color:${dueAmt <= 0 ? 'var(--success)' : 'var(--danger)'};">${dueAmt <= 0 ? 'Paid' : '₹'+dueAmt.toLocaleString()}</span>
+            </div>
+        </div>
+        ${advAmt > 0 ? `
+        <div style="background:rgba(59, 130, 246, 0.1); padding:10px; border-radius:12px; margin-bottom:15px; font-size:12px;">
+            <strong>Received: ₹${advAmt}</strong> (${s.advMode || 'Cash'})<br>
+            ${s.advNote ? `<span style="color:var(--dim); font-size:11px;">Txn/Note: ${s.advNote}</span>` : ''}
+        </div>` : ''}
+        `;
+
+        document.getElementById('modalBody').innerHTML = `<span class="close-x" onclick="document.getElementById('detailModal').style.display='none'">×</span><h3 style="margin-bottom:5px; color:var(--accent); display:flex; align-items:center; justify-content:center;">${s.venue}</h3><div style="text-align:center; margin-bottom:10px;">${typeBadge}${statusBadge}</div><h4 style="margin:0 0 5px 0; color:var(--text);">${s.org}</h4><p style="font-size:12px; color:var(--dim); margin:0 0 15px 0;">${formatD(s.date)}</p> ${paymentBox} ${s.note ? `<div style="background:var(--warning); color:white; padding:10px; border-radius:10px; margin-bottom:15px; font-size:13px; white-space: pre-wrap;">📌 ${s.note}</div>` : ''}<div style="border-top:1px solid var(--border); max-height:250px; overflow-y:auto;">${s.payouts.map(p=>`<div style="border-bottom:1px solid var(--border); padding:10px 0; text-align:left;"><div style="display:flex; justify-content:space-between;"><span style="font-weight:500;">${p.name} <small style="color:var(--dim)">(${p.mode})</small></span><strong>₹${p.amt}</strong></div>${p.note ? `<div style="background:var(--bg); padding:5px; border-radius:5px; margin-top:5px; font-size:11px; color:var(--dim);">📝 ${p.note}</div>` : ''}</div>`).join('')}</div><div style="background:var(--grad); color:white; padding:12px; border-radius:15px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px;">Total Accounted</span><strong style="font-size:16px;">₹${memTotal.toLocaleString()}</strong></div><div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;"><button class="btn-main" style="flex:1; margin-top:0;" onclick="exportGigPDF(${id})">PDF</button><button class="btn-main" style="background:var(--info); flex:1; margin-top:0;" onclick="editGig(${id})">EDIT</button>${dueAmt > 0 ? `<button class="btn-main" style="background:var(--success); flex:1; margin-top:0;" onclick="markAsPaid(${id})">PAY DUE</button>` : ''}</div><button class="btn-main" style="background:var(--danger); margin-top:10px;" onclick="deleteGig(${id})">DELETE GIG</button>`; 
+        document.getElementById('detailModal').style.display='flex'; 
+    }
+
+    function exportMemberPDF() {
+        const name = document.getElementById('memSelect').value; if(!name) return;
+        const sm = parseInt(document.getElementById('anaStartMonth').value); const sy = parseInt(document.getElementById('anaStartYear').value);
+        const em = parseInt(document.getElementById('anaEndMonth').value); const ey = parseInt(document.getElementById('anaEndYear').value);
+        const start = new Date(sy, sm, 1); const end = new Date(ey, em, 31);
+        const data = []; db.shows.forEach(s => { const d = new Date(s.date); if(d >= start && d <= end){ s.payouts.forEach(p=>{if(p.name===name) data.push({date:s.date, venue:s.venue, org:s.org, amt:p.amt, note: p.note});}); } });
+        
+        const mCount = getMonthDiff(start, end);
+        exportReport("Performance", name, data, `${months[sm]} ${sy}`, `${months[em]} ${ey}`, mCount);
+    }
+    function viewBreakdown(type) {
+        const mem = document.getElementById('dashMemSelect').value; if(!mem) return;
+        const now = new Date(); let start, end, title, sl, el;
+        if(type==='lifetime'){ start=new Date(2000,0,1); end=new Date(2100,0,1); title="Lifetime"; sl="Start"; el="Current"; }
+        else if(type==='month'){ start=new Date(now.getFullYear(),now.getMonth(),1); end=new Date(now.getFullYear(),now.getMonth(),31); title="Monthly"; sl=months[now.getMonth()]+" "+now.getFullYear(); el=sl; }
+        else if(type==='year'){ start=new Date(now.getFullYear(),0,1); end=new Date(now.getFullYear(),11,31); title="Yearly"; sl="Jan "+now.getFullYear(); el="Dec "+now.getFullYear(); }
+        else { 
+            const sm = parseInt(document.getElementById('dashStartMonth').value); const sy = parseInt(document.getElementById('dashStartYear').value);
+            const em = parseInt(document.getElementById('dashEndMonth').value); const ey = parseInt(document.getElementById('dashEndYear').value);
+            start = new Date(sy, sm, 1); end = new Date(ey, em, 31); title="Custom Period"; sl = `${months[sm]} ${sy}`; el = `${months[em]} ${ey}`;
+        }
+        const data = []; db.shows.forEach(s => { if(new Date(s.date)>=start && new Date(s.date)<=end){ s.payouts.forEach(p=>{if(p.name===mem) data.push({id: s.id, date:s.date, venue:s.venue, org:s.org, amt:p.amt, note: p.note});}); } });
+        renderBreakdownModal(title, mem, data, sl, el);
+    }
+    function renderBreakdownModal(title, entity, data, sl, el) {
+        let html = `<span class="close-x" onclick="document.getElementById('detailModal').style.display='none'">×</span><h3>${title}</h3><p>${entity}</p><div style="margin-top:15px; border-top:1px solid var(--border)">`;
+        let t = 0; data.sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(i => { t += i.amt; 
+            const clk = i.id ? `onclick="viewGigDetails(${i.id})"` : ''; const cursorStyle = i.id ? 'cursor:pointer;' : '';
+            html += `<div class="bk-row" ${clk} style="${cursorStyle}"><div><strong>${i.venue}</strong><br><small>${formatD(i.date)} | ${i.org}</small>${i.note ? `<br><small style="font-style:italic">Note: ${i.note}</small>` : ''}</div><strong>₹${i.amt.toLocaleString()}</strong></div>`; 
+        });
+        html += `<div style="display:flex; justify-content:space-between; padding:15px 0; color:var(--accent);"><strong>TOTAL</strong><strong>₹${t.toLocaleString()}</strong></div></div><button class="btn-main" id="dlBreakdownPdf">DOWNLOAD PDF</button>`;
+        document.getElementById('modalBody').innerHTML = html; document.getElementById('detailModal').style.display = 'flex';
+        document.getElementById('dlBreakdownPdf').onclick = () => exportReport(title, entity, data, sl, el, 1);
+    }
+
+    function toggleAnalysisMode() { 
+        const m = document.getElementById('analysisType').value; 
+        document.getElementById('memberSection').style.display = m === 'member' ? 'block' : 'none'; 
+        document.getElementById('orgSection').style.display = m === 'organizer' ? 'block' : 'none'; 
+        document.getElementById('typeSection').style.display = m === 'type' ? 'block' : 'none'; 
+        
+        if(m === 'member'){ 
+            const ms = db.dir.filter(d=>d.type==='m').map(d=>d.name).sort(); 
+            if(!ms.includes("Srikanta Banerjee")) ms.unshift("Srikanta Banerjee"); 
+            document.getElementById('memSelect').innerHTML = '<option value="">Select Member</option>' + ms.map(n => `<option value="${n}">${n}</option>`).join(''); 
+        } 
+        triggerAnalysis(); 
+    }
+
+    function triggerAnalysis() { 
+        const mode = document.getElementById('analysisType').value; 
+        if(mode === 'member') runMemberAnalysis(); 
+        else if(mode === 'organizer') runOrgAnalysis();
+        else if(mode === 'type') runTypeAnalysis();
+    }
+    
+    function runMemberAnalysis() { const n = document.getElementById('memSelect').value; if(!n) return; 
+        const avgMode = document.getElementById('anaAvgMode').value;
+        const sm = document.getElementById('anaStartMonth').value; const sy = document.getElementById('anaStartYear').value; const em = document.getElementById('anaEndMonth').value; const ey = document.getElementById('anaEndYear').value; 
+        const s = new Date(sy, sm, 1); const e = new Date(ey, em, 31); let t=0, c=0; const cd={}; const now = new Date(); const todayStr = new Date().toLocaleDateString('en-CA');
+        db.shows.forEach(x=>{ const d=new Date(x.date); if(d >= s && d <= e && x.date < todayStr){ x.payouts.forEach(p=>{if(p.name===n){t+=p.amt; c++; const k=months[d.getMonth()].substring(0,3); cd[k]=(cd[k]||0)+p.amt;}}); } }); 
+        const mCount = getMonthDiff(s, e);
+        document.getElementById('memStats').style.display='block'; document.getElementById('totalSelectedVal').innerText=`₹${t.toLocaleString()}`; document.getElementById('totalSelectedShow').innerText=`${c} Shows`; document.getElementById('memAvgStats').innerText = getAvgDisplay(t, c, avgMode, mCount); 
+        if(mChart) mChart.destroy(); mChart = new Chart(document.getElementById('memChart'), { type: 'bar', data: { labels: Object.keys(cd), datasets: [{ label: 'Income', data: Object.values(cd), backgroundColor: '#8b5cf6', borderRadius: 5 }]} }); 
+    }
+    
+    function runOrgAnalysis() {
+        const avgMode = document.getElementById('anaAvgMode').value;
+        const sm = document.getElementById('anaStartMonth').value; const sy = document.getElementById('anaStartYear').value;
+        const em = document.getElementById('anaEndMonth').value; const ey = document.getElementById('anaEndYear').value;
+        const start = new Date(sy, sm, 1); const end = new Date(ey, em, 31);
+        const om={}; let tr=0, tg=0; const now = new Date(); const todayStr = new Date().toLocaleDateString('en-CA');
+        db.shows.forEach(x=>{ const d=new Date(x.date); if(d>=start && d <= end && x.date < todayStr){ if(!om[x.org]) om[x.org]={r:0, c:0, list:[]}; om[x.org].r+=x.deal; om[x.org].c++; om[x.org].list.push({id: x.id, date: x.date, venue: x.venue, org: x.org, amt: x.deal, note: x.note}); tr+=x.deal; tg++; } });
+        const mCount = getMonthDiff(start, end);
+        document.getElementById('orgSection').style.display='block'; document.getElementById('orgPeriodTotal').innerText=`₹${tr.toLocaleString()}`; document.getElementById('orgPeriodGigs').innerText=`${tg} Shows`; document.getElementById('orgAvgStats').innerText = getAvgDisplay(tr, tg, avgMode, mCount);
+        const sortedOrgs = Object.keys(om).sort((a,b)=>om[b].r - om[a].r); 
+        const dynamicColors = sortedOrgs.map((_, i) => { const hue = (i * 137.508) % 360; return `hsl(${hue}, 70%, 50%)`; });
+        if(oChart) oChart.destroy(); oChart = new Chart(document.getElementById('orgChart'), { type: 'doughnut', data: { labels: sortedOrgs, datasets: [{ data: sortedOrgs.map(k => om[k].r), backgroundColor: dynamicColors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${om[ctx.label].c} Gigs (₹${ctx.raw.toLocaleString()})` } } }, onClick: (evt, elements) => { if (elements.length > 0) { const i = elements[0].index; const label = sortedOrgs[i]; renderBreakdownModal(label + " Gigs", "Total Deal Info", om[label].list, months[sm]+" "+sy, months[em]+" "+ey); } } } });
+        document.getElementById('orgDetailsList').innerHTML = sortedOrgs.map((l, i) => { const sL = months[sm]+" "+sy; const eL = months[em]+" "+ey; const perc = tr > 0 ? ((om[l].r / tr) * 100).toFixed(1) : 0; const color = dynamicColors[i]; return `<div class="bk-row" onclick='renderBreakdownModal("${l} Details", "Total Deal Info", ${JSON.stringify(om[l].list).replace(/'/g, "&apos;")}, "${sL}", "${eL}")'><div style="display:flex; align-items:center;"><span style="display:inline-block; width:10px; height:10px; background:${color}; border-radius:50%; margin-right:8px; flex-shrink:0;"></span><div><strong>${l}</strong> (${perc}%)<br><small>${om[l].c} Shows</small></div></div><strong>₹${om[l].r.toLocaleString()}</strong></div>`; }).join('');
+    }
+
+    function runTypeAnalysis() {
+        const sm = parseInt(document.getElementById('anaStartMonth').value); 
+        const sy = parseInt(document.getElementById('anaStartYear').value);
+        const em = parseInt(document.getElementById('anaEndMonth').value); 
+        const ey = parseInt(document.getElementById('anaEndYear').value);
+        const start = new Date(sy, sm, 1); 
+        const end = new Date(ey, em, 31);
+        const tm = {}; let tr = 0, tg = 0; 
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        
+        db.shows.forEach(x => { 
+            const d = new Date(x.date); 
+            if(d >= start && d <= end && x.date < todayStr) { 
+                const tName = x.type || 'General';
+                if(!tm[tName]) tm[tName] = { r: 0, c: 0, list: [] }; 
+                tm[tName].r += x.deal; 
+                tm[tName].c++; 
+                tm[tName].list.push({id: x.id, date: x.date, venue: x.venue, org: x.org, amt: x.deal, note: x.note}); 
+                tr += x.deal; 
+                tg++; 
+            } 
+        });
+        
+        document.getElementById('typeSection').style.display = 'block'; 
+        document.getElementById('typePeriodTotal').innerText = `₹${tr.toLocaleString()}`; 
+        document.getElementById('typePeriodGigs').innerText = `${tg} Shows`; 
+        
+        const sortedTypes = Object.keys(tm).sort((a,b) => tm[b].c - tm[a].c);
+        const dynamicColors = sortedTypes.map((_, i) => `hsl(${(i * 137.508) % 360}, 70%, 50%)`);
+        
+        if(tChart) tChart.destroy(); 
+        tChart = new Chart(document.getElementById('typeChart'), { 
+            type: 'pie', 
+            data: { 
+                labels: sortedTypes, 
+                datasets: [{ data: sortedTypes.map(k => tm[k].c), backgroundColor: dynamicColors, borderWidth: 0 }] 
+            }, 
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { legend: { display: false } }
+            } 
+        });
+        
+        document.getElementById('typeDetailsList').innerHTML = sortedTypes.map((l, i) => { 
+            const sL = months[sm]+" "+sy; const eL = months[em]+" "+ey; 
+            const perc = tg > 0 ? ((tm[l].c / tg) * 100).toFixed(1) : 0; 
+            const color = dynamicColors[i]; 
+            return `<div class="bk-row" onclick='renderBreakdownModal("${l} Gigs", "Gig Type", ${JSON.stringify(tm[l].list).replace(/'/g, "&apos;")}, "${sL}", "${eL}")'><div style="display:flex; align-items:center;"><span style="display:inline-block; width:10px; height:10px; background:${color}; border-radius:50%; margin-right:8px; flex-shrink:0;"></span><div><strong>${l}</strong> (${perc}%)<br><small>₹${tm[l].r.toLocaleString()}</small></div></div><strong>${tm[l].c} Shows</strong></div>`; 
+        }).join('');
+    }
+
+    function resetForm() { 
+        document.getElementById('editId').value=''; 
+        document.getElementById('vName').value=''; 
+        document.getElementById('orgName').value=''; 
+        document.getElementById('gStatus').value='Knock'; 
+        document.getElementById('gType').value=''; 
+        document.getElementById('gDeal').value=''; 
+        document.getElementById('gAdvance').value=''; 
+        document.getElementById('gDue').value=''; 
+        document.getElementById('gAdvMode').value='Cash'; 
+        document.getElementById('gAdvNote').value=''; 
+        document.getElementById('gNote').value=''; 
+        document.getElementById('payoutArea').innerHTML=''; 
+        document.getElementById('formTitle').innerText="Gig Entry"; 
+        document.getElementById('cancelBtn').style.display='none';
+        
+        document.getElementById('gDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    function editGig(id) { 
+        const s=db.shows.find(x=>x.id==id); 
+        document.getElementById('detailModal').style.display='none'; 
+        document.getElementById('editId').value=s.id; 
+        document.getElementById('vName').value=s.venue; 
+        document.getElementById('orgName').value=s.org; 
+        document.getElementById('gDate').value=s.date; 
+        document.getElementById('gStatus').value=s.status || 'Knock'; 
+        document.getElementById('gType').value=s.type || ''; 
+        document.getElementById('gDeal').value=s.deal; 
+        document.getElementById('gAdvance').value=s.advAmt || ''; 
+        
+        let currentDue = s.dueAmt !== undefined ? s.dueAmt : (s.deal - (s.advAmt || 0));
+        document.getElementById('gDue').value = currentDue > 0 ? currentDue : ''; 
+        
+        document.getElementById('gAdvMode').value=s.advMode || 'Cash'; 
+        document.getElementById('gAdvNote').value=s.advNote || ''; 
+        document.getElementById('gNote').value=s.note || ''; 
+        document.getElementById('payoutArea').innerHTML=''; 
+        
+        s.payouts.forEach(p=>{ 
+            if(p.name !== "Srikanta Banerjee" || s.payouts.length > 1) {
+                addRow(p.name); 
+                const r=document.querySelector('#payoutArea .payout-row:last-child'); 
+                r.querySelector('.pa').value=p.amt; 
+                r.querySelector('.pm').value=p.mode; 
+                r.querySelector('.pnote').value=p.note || ''; 
+            }
+        }); 
+        
+        calcDue(); 
+        document.getElementById('formTitle').innerText="Edit Gig"; 
+        document.getElementById('cancelBtn').style.display='block'; showPage('add'); 
+    }
+    
+    async function runExport() { const ds=JSON.stringify(db, null, 2); const dateStr = new Date().toISOString().split('T')[0]; const fName = `Gig_Manager_Backup_${dateStr}.json`; if(window.showSaveFilePicker){ try{ const h=await window.showSaveFilePicker({ suggestedName: fName, types:[{description:'JSON', accept:{'application/json':['.json']}}] }); const w=await h.createWritable(); await w.write(ds); await w.close(); notify("Saved","success"); }catch(e){} } else { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([ds],{type:'application/json'})); a.download=fName; a.click(); } }
+    function handleImport(e) { 
+        const r = new FileReader(); 
+        r.onload = (x) => { 
+            try { 
+                db = JSON.parse(x.target.result); 
+                saveDB(); 
+                notify("Sync Success", "success"); 
+                setTimeout(() => location.reload(), 1000); 
+            } catch(err) { 
+                notify("Error", "danger"); 
+            } 
+        }; 
+        r.readAsText(e.target.files[0]); 
+    }
+
+    function toggleTheme() { 
+        db.theme = db.theme === 'dark' ? 'light' : 'dark'; 
+        document.body.setAttribute('data-theme', db.theme); 
+        saveDB(); 
+        notify("Theme Updated"); 
+    }
+    
+    function closeDetailIfOutside(e) { 
+        if(e.target.id === 'detailModal') e.target.style.display = 'none'; 
+    }
+
+    function addFooter(doc) { 
+        const pc = doc.internal.getNumberOfPages(); 
+        doc.setFontSize(8); 
+        doc.setTextColor(150); 
+        for(let i=1; i<=pc; i++) { 
+            doc.setPage(i); 
+            doc.text("Generated by Gig Data Manager", 105, 285, {align: 'center'}); 
+        } 
+    }
+</script>
+</body>
+</html>
